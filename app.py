@@ -1,14 +1,17 @@
 from flask import Flask, request, jsonify
 import joblib
+import numpy as np
 import pandas as pd
+import os
 
 app = Flask(__name__)
 
-# ✅ تحميل الموديل من المجلد الصحيح
-model = joblib.load("model/model.pkl")
+# تحميل الموديل
+model_path = os.path.join("model", "model.pkl")
+model = joblib.load(model_path)
 
-# ✅ ترتيب الأعمدة كما تم تدريب النموذج عليها
-expected_features = [
+# قائمة الأعمدة المطلوبة (يجب أن تتطابق تمامًا مع التدريب)
+FEATURE_COLUMNS = [
     'Unnamed: 0', 'BMI', 'Smoking', 'AlcoholDrinking', 'Stroke',
     'PhysicalHealth', 'MentalHealth', 'DiffWalking', 'Sex', 'AgeCategory',
     'PhysicalActivity', 'GenHealth', 'SleepTime', 'Asthma', 'KidneyDisease',
@@ -17,26 +20,43 @@ expected_features = [
     'Diabetic_Yes (during pregnancy)'
 ]
 
-@app.route('/')
+@app.route("/", methods=["GET"])
 def home():
     return jsonify({
         "message": "✅ MLflow Heart Disease Prediction API is running successfully!",
-        "usage": "Send POST request to /predict with JSON data."
+        "usage": "Send POST request to /predict with full JSON feature names."
     })
 
-@app.route('/predict', methods=['POST'])
+@app.route("/predict", methods=["POST"])
 def predict():
     try:
         data = request.get_json()
 
-        # تحويل البيانات إلى DataFrame بالترتيب الصحيح
-        df = pd.DataFrame([data], columns=expected_features)
+        # التأكد من وجود القيم المطلوبة
+        missing = [f for f in FEATURE_COLUMNS if f not in data and f != 'Unnamed: 0']
+        if missing:
+            return jsonify({
+                "error": f"Missing features: {missing}"
+            }), 400
 
+        # إنشاء DataFrame بصف واحد من القيم
+        df = pd.DataFrame([data], columns=[f for f in FEATURE_COLUMNS if f != 'Unnamed: 0'])
+
+        # ملء أي قيم NaN بـ 0
+        df = df.fillna(0)
+
+        # التنبؤ
         prediction = model.predict(df)[0]
-        return jsonify({"prediction": int(prediction)})
+        proba = model.predict_proba(df)[0][1]
+
+        return jsonify({
+            "prediction": int(prediction),
+            "probability": float(proba)
+        })
 
     except Exception as e:
-        return jsonify({"error": str(e)})
+        return jsonify({"error": str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
