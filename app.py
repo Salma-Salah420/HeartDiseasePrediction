@@ -1,29 +1,34 @@
 from flask import Flask, request, jsonify
-import mlflow.pyfunc
 import pandas as pd
-from flask_cors import CORS
+import mlflow.pyfunc
+import os
 
-# Initialize app
+# 🔹 تحديد المسار النسبي للنموذج داخل الحاوية
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "model")
+
+# ✅ تحميل الموديل مرة واحدة عند بدء التشغيل
+model = mlflow.pyfunc.load_model(MODEL_PATH)
+
 app = Flask(__name__)
-CORS(app)
 
-# Load the model from MLflow directory
-model = mlflow.pyfunc.load_model("model")
-
-@app.route("/", methods=["GET"])
+@app.route("/")
 def home():
-    return jsonify({"message": "✅ MLflow model serving is running."})
+    return jsonify({"message": "✅ Heart Disease MLflow model is running!"})
 
 @app.route("/invocations", methods=["POST"])
 def predict():
     try:
         data = request.get_json()
         if "dataframe_split" not in data:
-            return jsonify({"error": "Invalid input format. Expected 'dataframe_split'."}), 400
+            return jsonify({"error": "Invalid JSON format. Expected 'dataframe_split' key."}), 400
 
-        df = pd.DataFrame(**data["dataframe_split"])
-        preds = model.predict(df)
-        return jsonify({"predictions": preds.tolist()})
+        df = pd.DataFrame(
+            data["dataframe_split"]["data"],
+            columns=data["dataframe_split"]["columns"]
+        )
+
+        predictions = model.predict(df)
+        return jsonify({"predictions": predictions.tolist()})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
