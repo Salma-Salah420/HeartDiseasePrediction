@@ -1,14 +1,14 @@
 from flask import Flask, request, jsonify
-import pandas as pd
 import joblib
+import pandas as pd
 
 app = Flask(__name__)
 
-# Load trained model
-model = joblib.load("model.pkl")
+# ✅ تحميل الموديل من المجلد الصحيح
+model = joblib.load("model/model.pkl")
 
-# ✅ ترتيب الأعمدة كما تم أثناء التدريب
-FEATURE_ORDER = [
+# ✅ ترتيب الأعمدة كما تم تدريب النموذج عليها
+expected_features = [
     'Unnamed: 0', 'BMI', 'Smoking', 'AlcoholDrinking', 'Stroke',
     'PhysicalHealth', 'MentalHealth', 'DiffWalking', 'Sex', 'AgeCategory',
     'PhysicalActivity', 'GenHealth', 'SleepTime', 'Asthma', 'KidneyDisease',
@@ -17,19 +17,26 @@ FEATURE_ORDER = [
     'Diabetic_Yes (during pregnancy)'
 ]
 
-@app.route("/predict", methods=["POST"])
+@app.route('/')
+def home():
+    return jsonify({
+        "message": "✅ MLflow Heart Disease Prediction API is running successfully!",
+        "usage": "Send POST request to /predict with JSON data."
+    })
+
+@app.route('/predict', methods=['POST'])
 def predict():
     try:
         data = request.get_json()
 
-        # تأكد أن البيانات تحتوي كل الأعمدة بنفس الترتيب
-        df = pd.DataFrame([data])[FEATURE_ORDER]
+        # تحويل البيانات إلى DataFrame بالترتيب الصحيح
+        df = pd.DataFrame([data], columns=expected_features)
 
-        prediction = model.predict(df)
-        return jsonify({"prediction": int(prediction[0])})
+        prediction = model.predict(df)[0]
+        return jsonify({"prediction": int(prediction)})
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": str(e)})
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
