@@ -39,8 +39,7 @@ Salma Salah Mohamed Mokhtar
 •  Deployment: Flask / Streamlit
 •  Version Control: GitHub
 ---------
-•  Dataset: https://drive.google.com/file/d/15wlju8Re0rU8Lo4_RwKH5U3oUWWZFL7m/view?usp=drive_link
---------------
+
 
 
 
