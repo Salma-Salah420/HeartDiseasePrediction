@@ -8,7 +8,7 @@ Group Members & Roles:
 ------------------------
 Salma Salah—analysis phase (Milestone 2)&& UI (frontend/backend/API)
 ------
-Fatema Taher__preprocessing phase (Milestone1)&&Report
+Fatema Taher__preprocessing phase (Milestone1) && Report && Computer Vision (Predict EF from EchoCardiography <videos>)
 -------
 Raghad Hamdy-Modeling and evaluation phase (Milestone 3)
 -------
